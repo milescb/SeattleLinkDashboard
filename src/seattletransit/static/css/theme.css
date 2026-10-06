@@ -1,0 +1,32 @@
+/* ===== Theme: every color and font lives here. Edit freely. ===== */
+:root {
+  /* surfaces */
+  --bg:          #070b14;
+  --panel:       #0c1220;
+  --panel-edge:  #1b2740;
+  --glow:        rgba(56, 180, 230, 0.08);
+
+  /* text */
+  --text:        #d8e1f0;
+  --text-dim:    #7d8aa5;
+  --grid:        #1b2740;
+
+  /* lines: --route-<route_id>. Falls back to the GTFS color if missing.
+     Validated for a dark surface (lightness band + colorblind separation). */
+  --route-100479: #36a957;  /* 1 Line */
+  --route-2LINE:  #1f9bcf;  /* 2 Line */
+  --route-all:    #c9d3e3;  /* "all lines" series in charts */
+
+  /* status (reserved: never use these for lines) */
+  --good:        #3ddc84;
+  --warn:        #f5b942;
+  --bad:         #ff4d5e;
+  --stale:       #5b6680;  /* schedule-only trains (no realtime) */
+  --station:     #e8eef8;
+
+  /* basemap: any CARTO style (dark_all, dark_nolabels, light_all…); needs CARTO_KEY */
+  --tiles: "dark_all";
+
+  --font:  "Inter", system-ui, -apple-system, sans-serif;
+  --mono:  "JetBrains Mono", ui-monospace, Menlo, monospace;
+}

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Link Control Room</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/layout.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="live-dot"></span> LINK CONTROL <span class="dim">· Sound Transit</span></div>
+    <div class="counters">
+      <div><span class="label">Trains</span><span id="c-trains" class="num">–</span></div>
+      <div><span class="label">On time</span><span id="c-ontime" class="num">–</span></div>
+      <div><span class="label">Delayed</span><span id="c-delayed" class="num bad">–</span></div>
+      <div><span class="label">Alerts</span><span id="c-alerts" class="num warn">–</span></div>
+    </div>
+    <div class="clock"><span id="clock" class="num">--:--:--</span><span id="updated" class="dim">waiting for data…</span></div>
+  </header>
+
+  <main class="grid">
+    <section class="panel map-panel">
+      <div id="map"></div>
+      <div id="legend" class="legend"></div>
+    </section>
+
+    <section class="panel alerts-panel">
+      <h2>Service alerts <span id="alert-count" class="badge">0</span></h2>
+      <div id="alerts" class="alerts-list"><p class="dim">Loading…</p></div>
+    </section>
+
+    <section class="panel stats-panel">
+      <div class="kpis">
+        <div class="kpi"><span class="label">On-time</span><span id="k-ontime" class="num big">–</span><span class="dim small">−1 to +5 min</span></div>
+        <div class="kpi"><span class="label">Median delay</span><span id="k-median" class="num big">–</span></div>
+        <div class="kpi"><span class="label">Worst</span><span id="k-worst" class="num big bad">–</span><span id="k-worst-who" class="dim small"></span></div>
+      </div>
+      <div class="chart-box"><h3>On-time % by line</h3><div class="chart"><canvas id="ch-lines"></canvas></div></div>
+      <div class="chart-box"><h3>Delay distribution (min)</h3><div class="chart"><canvas id="ch-hist"></canvas></div></div>
+      <div class="chart-box wide">
+        <h3>
+          <span>Over time</span>
+          <span class="toggle" id="hist-toggle">
+            <button data-metric="on_time_pct" class="on">On-time %</button>
+            <button data-metric="avg_delay">Avg delay</button>
+          </span>
+        </h3>
+        <div class="chart"><canvas id="ch-time"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h3>Most delayed now</h3>
+        <ol id="worst" class="worst-list"></ol>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="js/colors.js"></script>
+  <script src="js/fmt.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/alerts.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
