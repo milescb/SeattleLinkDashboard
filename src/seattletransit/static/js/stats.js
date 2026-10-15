@@ -1,8 +1,7 @@
-// Bottom panel: KPI tiles, on-time by line, delay histogram, history, most-delayed list.
+// "Now" panel: KPI tiles, on-time by line, delay histogram, most-delayed list.
+// Chart.js defaults set here are shared with history.js.
 const Stats = (() => {
   let routes = [];
-  let metric = 'on_time_pct';
-  let last = null;
   const charts = {};
 
   Chart.defaults.color = color('text-dim');
@@ -11,6 +10,7 @@ const Stats = (() => {
   Chart.defaults.font.size = 10;
   Chart.defaults.maintainAspectRatio = false;
   Chart.defaults.animation.duration = 400;
+  Chart.defaults.scale.ticks.maxRotation = 0;  // autoSkip thins labels instead of tilting them
 
   const bar = { borderRadius: 4, borderSkipped: 'start', maxBarThickness: 36 };
 
@@ -34,52 +34,9 @@ const Stats = (() => {
         scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { grid: { display: false } } },
       },
     });
-
-    const series = [{ id: 'all', name: 'All lines', color: color('route-all') }, ...routes];
-    charts.time = new Chart('ch-time', {
-      type: 'line',
-      data: {
-        datasets: series.map(s => ({
-          key: s.id, label: s.name, data: [], borderColor: s.color, backgroundColor: s.color,
-          borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.25, spanGaps: true,
-          borderDash: s.id === 'all' ? [4, 3] : [],
-        })),
-      },
-      options: {
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 12, boxHeight: 2 } },
-          tooltip: { callbacks: {
-            title: c => fmtTime(c[0].parsed.x),
-            label: c => `${c.dataset.label}: ${metric === 'on_time_pct' ? fmtPct(c.parsed.y) : fmtDelay(c.parsed.y)}`,
-          } },
-        },
-        scales: {
-          x: { type: 'linear', ticks: { callback: fmtTime, maxTicksLimit: 6 }, grid: { display: false } },
-          y: { ticks: { callback: v => (metric === 'on_time_pct' ? `${v}%` : fmtDelay(v)) } },
-        },
-      },
-    });
-
-    document.querySelectorAll('#hist-toggle button').forEach(b => b.addEventListener('click', () => {
-      metric = b.dataset.metric;
-      document.querySelectorAll('#hist-toggle button').forEach(x => x.classList.toggle('on', x === b));
-      if (last) renderHistory(last.history);
-    }));
-  }
-
-  function renderHistory(history) {
-    const num = v => (v === '' || v == null ? null : Number(v));
-    charts.time.data.datasets.forEach(ds => {
-      ds.data = history.filter(r => r.route === ds.key).map(r => ({ x: Number(r.ts), y: num(r[metric]) }));
-    });
-    const y = charts.time.options.scales.y;
-    [y.min, y.max] = metric === 'on_time_pct' ? [0, 100] : [undefined, undefined];
-    charts.time.update();
   }
 
   function render(live) {
-    last = live;
     const s = live.stats;
     const delayMin = live.settings.delay_s / 60;
 
@@ -97,8 +54,6 @@ const Stats = (() => {
     charts.hist.data.datasets[0].data = s.hist.counts;
     charts.hist.data.datasets[0].backgroundColor = bins.map(b => (b >= delayMin ? color('bad') : color('route-all')));
     charts.hist.update();
-
-    renderHistory(live.history);
 
     document.getElementById('worst').replaceChildren(...s.worst.map(t => h('li',
       { onclick: () => TrainMap.focusTrain(t.route, t.id), title: 'Show on map' },

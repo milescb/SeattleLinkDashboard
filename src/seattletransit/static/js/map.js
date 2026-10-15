@@ -1,6 +1,7 @@
 // Main panel: Leaflet map with line shapes, stations and live train markers.
 const TrainMap = (() => {
-  const map = L.map('map', { zoomControl: false }).setView([47.61, -122.25], 11);
+  // fractional zoom so the line shapes fill the (tall, narrow) panel as tightly as possible
+  const map = L.map('map', { zoomControl: false, zoomSnap: 0.1, zoomDelta: 0.5 }).setView([47.61, -122.25], 11);
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
   function addTiles(cartoKey) {
@@ -38,7 +39,15 @@ const TrainMap = (() => {
     stat.stations.forEach(s => L.circleMarker([s.lat, s.lon], {
       radius: 4, weight: 1.5, color: color('bg'), fillColor: color('station'), fillOpacity: 1,
     }).bindTooltip(s.name, { direction: 'top' }).addTo(map));
-    if (bounds.isValid()) map.fitBounds(bounds, { padding: [20, 20] });
+    const fit = () => bounds.isValid() && map.fitBounds(bounds, { padding: [8, 8] });
+    fit();
+    // refit when the panel resizes, until the user pans or zooms
+    let userMoved = false;
+    const moved = () => { userMoved = true; };
+    map.on('dragstart', moved);
+    ['wheel', 'dblclick', 'touchstart'].forEach(ev => map.getContainer().addEventListener(ev, moved, { passive: true }));
+    document.querySelector('.leaflet-control-zoom').addEventListener('click', moved);
+    new ResizeObserver(() => { map.invalidateSize(); if (!userMoved) fit(); }).observe(document.getElementById('map'));
     map.on('click', () => highlight(null));
     buildLegend();
   }

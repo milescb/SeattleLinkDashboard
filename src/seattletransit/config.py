@@ -20,5 +20,7 @@ AT_STATION_S = 30       # within this many seconds of closest stop -> "at statio
 ON_TIME_EARLY_S = -60   # on-time window: [ON_TIME_EARLY_S, ON_TIME_LATE_S]
 ON_TIME_LATE_S = 300
 
-HISTORY_HOURS = 24
+TIMEZONE = "America/Los_Angeles"
+SERVICE_DAY_START_HOUR = 3  # trains running after midnight count toward the previous day
+TOD_BUCKET_MIN = 15     # time-of-day charts average over this many minutes
 DATA_DIR = Path(os.environ.get("DATA_DIR", "data"))

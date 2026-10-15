@@ -28,32 +28,52 @@
       <div id="legend" class="legend"></div>
     </section>
 
+    <section class="panel now-panel">
+      <div class="kpis">
+        <div class="kpi"><span class="label">On-time now</span><span id="k-ontime" class="num big">–</span><span class="dim small">−1 to +5 min</span></div>
+        <div class="kpi"><span class="label">Median delay</span><span id="k-median" class="num big">–</span></div>
+        <div class="kpi"><span class="label">Worst</span><span id="k-worst" class="num big bad">–</span><span id="k-worst-who" class="dim small"></span></div>
+      </div>
+      <div class="chart-box"><h3>On-time by line</h3><div class="chart"><canvas id="ch-lines"></canvas></div></div>
+      <div class="chart-box"><h3>Delay now (min)</h3><div class="chart"><canvas id="ch-hist"></canvas></div></div>
+      <div class="chart-box">
+        <h3>Most delayed now</h3>
+        <ol id="worst" class="worst-list"></ol>
+      </div>
+    </section>
+
     <section class="panel alerts-panel">
       <h2>Service alerts <span id="alert-count" class="badge">0</span></h2>
       <div id="alerts" class="alerts-list"><p class="dim">Loading…</p></div>
     </section>
 
-    <section class="panel stats-panel">
-      <div class="kpis">
-        <div class="kpi"><span class="label">On-time</span><span id="k-ontime" class="num big">–</span><span class="dim small">−1 to +5 min</span></div>
-        <div class="kpi"><span class="label">Median delay</span><span id="k-median" class="num big">–</span></div>
-        <div class="kpi"><span class="label">Worst</span><span id="k-worst" class="num big bad">–</span><span id="k-worst-who" class="dim small"></span></div>
+    <section class="panel hist-panel">
+      <div class="hist-bar">
+        <h2>History</h2>
+        <span class="toggle" id="range-presets">
+          <button data-days="1">Today</button>
+          <button data-days="7" class="on">7 d</button>
+          <button data-days="30">30 d</button>
+          <button data-days="all">All</button>
+        </span>
+        <span class="range">
+          <input type="date" id="range-start" aria-label="From service day">
+          <span class="dim">→</span>
+          <input type="date" id="range-end" aria-label="To service day">
+        </span>
+        <span class="toggle" id="metric-toggle">
+          <button data-metric="on_time_pct" class="on">On-time %</button>
+          <button data-metric="avg_delay">Avg delay</button>
+        </span>
+        <span id="range-summary" class="range-summary small"></span>
       </div>
-      <div class="chart-box"><h3>On-time % by line</h3><div class="chart"><canvas id="ch-lines"></canvas></div></div>
-      <div class="chart-box"><h3>Delay distribution (min)</h3><div class="chart"><canvas id="ch-hist"></canvas></div></div>
-      <div class="chart-box wide">
-        <h3>
-          <span>Over time</span>
-          <span class="toggle" id="hist-toggle">
-            <button data-metric="on_time_pct" class="on">On-time %</button>
-            <button data-metric="avg_delay">Avg delay</button>
-          </span>
-        </h3>
-        <div class="chart"><canvas id="ch-time"></canvas></div>
-      </div>
-      <div class="chart-box">
-        <h3>Most delayed now</h3>
-        <ol id="worst" class="worst-list"></ol>
+      <div class="hist-grid">
+        <div class="chart-box span2"><h3>Over time</h3><div class="chart"><canvas id="ch-time"></canvas></div></div>
+        <div class="chart-box"><h3>By day</h3><div class="chart"><canvas id="ch-day"></canvas></div></div>
+        <div class="chart-box"><h3>Time of day · avg of days</h3><div class="chart"><canvas id="ch-tod"></canvas></div></div>
+        <div class="chart-box"><h3>By day of week</h3><div class="chart"><canvas id="ch-dow"></canvas></div></div>
+        <div class="chart-box"><h3>Trains in service</h3><div class="chart"><canvas id="ch-service"></canvas></div></div>
+        <div class="chart-box span3"><h3><span>Day × hour</span><span id="heat-key" class="heat-key small"></span></h3><div id="heat" class="heat"></div></div>
       </div>
     </section>
   </main>
@@ -65,6 +85,7 @@
   <script src="js/map.js"></script>
   <script src="js/alerts.js"></script>
   <script src="js/stats.js"></script>
+  <script src="js/history.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

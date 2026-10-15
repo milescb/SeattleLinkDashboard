@@ -22,8 +22,8 @@ def fetch_trains(route_id):
 
     trains = []
     for t in j["data"]["list"]:
-        s = t["status"]
-        if not s.get("position"):
+        s = t.get("status") or {}  # OBA occasionally lists a trip with no status block
+        if not s.get("position") or "activeTripId" not in s:
             continue
         trains.append({
             "id": s.get("vehicleId") or s["activeTripId"],

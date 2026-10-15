@@ -7,7 +7,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 .warn  { color: var(--warn); }
 .label { display: block; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
 h2, h3 { margin: 0 0 8px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; }
-h3 { display: flex; justify-content: space-between; align-items: center; }
+h3 { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; }
 
 /* ---- top bar ---- */
 .topbar {
@@ -25,25 +25,33 @@ h3 { display: flex; justify-content: space-between; align-items: center; }
 .clock { display: flex; flex-direction: column; align-items: flex-end; }
 .clock .num { font-size: 20px; }
 
-/* ---- grid ---- */
+/* ---- grid ----
+   Link runs north-south, so the map is a tall narrow column; the room it frees goes to charts. */
 .grid {
   display: grid; gap: 10px; padding: 10px; height: calc(100% - 62px);
-  grid-template-columns: 1fr 360px;
-  grid-template-rows: 1fr 280px;
-  grid-template-areas: "map alerts" "stats stats";
+  grid-template-columns: minmax(300px, 24vw) 1fr 300px;
+  grid-template-rows: 220px 1fr;
+  grid-template-areas: "map now alerts" "map hist alerts";
 }
 .panel { background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 6px;
-  box-shadow: 0 0 24px var(--glow) inset; padding: 12px; min-height: 0; position: relative; }
+  box-shadow: 0 0 24px var(--glow) inset; padding: 12px; min-height: 0; min-width: 0; position: relative; }
 .map-panel    { grid-area: map; padding: 0; overflow: hidden; }
 .alerts-panel { grid-area: alerts; display: flex; flex-direction: column; }
-.stats-panel  { grid-area: stats; overflow: hidden; display: grid; gap: 12px; grid-template-columns: 170px 1fr 1fr 1.6fr 1fr; }
+.now-panel    { grid-area: now; overflow: hidden; display: grid; gap: 12px; grid-template-columns: 150px 1fr 1.4fr 1fr; }
+.hist-panel   { grid-area: hist; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.hist-grid    { flex: 1; min-height: 0; display: grid; gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: 1fr 1fr 0.9fr; }
+.span2 { grid-column: span 2; }
+.span3 { grid-column: span 3; }
 
 @media (max-width: 1100px) {
   html, body { height: auto; }
-  .grid { height: auto; grid-template-columns: 1fr; grid-template-rows: 60vh auto auto;
-    grid-template-areas: "map" "alerts" "stats"; }
-  .stats-panel { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-  .chart-box { height: 220px; }
+  .grid { height: auto; grid-template-columns: 1fr; grid-template-rows: 80vh auto auto auto;
+    grid-template-areas: "map" "now" "alerts" "hist"; }
+  .now-panel { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .hist-grid { grid-template-columns: 1fr; grid-template-rows: none; }
+  .span2, .span3 { grid-column: auto; }
+  .chart-box { height: 240px; }
   .alerts-list { max-height: 360px; }
 }
 
@@ -83,9 +91,9 @@ h3 { display: flex; justify-content: space-between; align-items: center; }
 /* ---- stats ---- */
 .kpis { display: flex; flex-direction: column; justify-content: space-between; }
 .kpi .big { font-size: 24px; line-height: 1.1; display: block; }
-.chart-box { position: relative; min-width: 0; display: flex; flex-direction: column; }
+.chart-box { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .chart { position: relative; flex: 1; min-height: 0; }  /* Chart.js sizes the canvas to this box */
-.toggle button { background: none; border: 1px solid var(--panel-edge); color: var(--text-dim);
+.toggle button { background: none; border-radius: 3px; border: 1px solid var(--panel-edge); color: var(--text-dim);
   font: 10px var(--mono); padding: 2px 6px; cursor: pointer; }
 .toggle button.on { color: var(--text); border-color: var(--text-dim); }
 .worst-list { margin: 0; padding: 0; list-style: none; overflow-y: auto; }
@@ -94,3 +102,19 @@ h3 { display: flex; justify-content: space-between; align-items: center; }
 .worst-list li:hover { background: rgba(255,255,255,.04); }
 .worst-list .who { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .worst-list .who span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- history ---- */
+.hist-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.hist-bar h2 { margin: 0; }
+.range { display: flex; align-items: center; gap: 6px; }
+.range input { background: var(--bg); color: var(--text); border: 1px solid var(--panel-edge); border-radius: 3px;
+  font: 11px var(--mono); padding: 2px 4px; color-scheme: dark; }
+.range-summary { margin-left: auto; color: var(--text-dim); font-family: var(--mono); }
+.range-summary b { color: var(--text); font-weight: 600; }
+.heat { flex: 1; min-height: 0; display: grid; gap: 1px; font: 9px var(--mono); color: var(--text-dim); }
+.heat .cell { border-radius: 1px; background: var(--grid); min-width: 0; min-height: 0; }
+.heat .cell.empty { background: transparent; }
+.heat .rowlab { text-align: right; padding-right: 4px; line-height: 1; align-self: center; }
+.heat .collab { text-align: center; white-space: nowrap; overflow: hidden; }
+.heat-key { display: flex; align-items: center; gap: 4px; text-transform: none; letter-spacing: 0; font-family: var(--mono); }
+.heat-key i { display: inline-block; width: 12px; height: 8px; border-radius: 1px; }

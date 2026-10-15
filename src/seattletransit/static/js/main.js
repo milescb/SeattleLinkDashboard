@@ -44,6 +44,7 @@ function tick() {
   const stat = await getJSON('/api/static');
   TrainMap.init(stat);
   Stats.init(stat.routes);
+  History.init(stat.routes);
   await refresh();
   setInterval(refresh, REFRESH_MS);
 })();

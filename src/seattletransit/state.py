@@ -1,20 +1,21 @@
-"""Background poller: latest snapshot, stats and delay history."""
-import csv
+"""Background poller: latest snapshot and stats; each poll's stats go to db.py."""
 import logging
+import re
 import statistics
 import threading
 import time
+from urllib.parse import quote, quote_plus
 
-from . import config, oba
+from . import config, db, oba
 
 log = logging.getLogger(__name__)
 
+_KEY_PARAM = re.compile(r"key=[^&\s\"']+")
+
 HIST_BINS = list(range(-2, 11))  # minutes; first bin is "<= -2", last is ">= 10"
-HISTORY_FIELDS = ["ts", "route", "count", "on_time_pct", "avg_delay"]
 
 lock = threading.Lock()  # ponytail: one global lock, fine for a single-process dashboard
 snapshot = {"trains": [], "alerts": [], "updated": 0, "error": None}
-history = []  # rows of HISTORY_FIELDS
 
 
 def _on_time(d):
@@ -47,40 +48,15 @@ def summarize(trains):
     }
 
 
-def _history_path():
-    return config.DATA_DIR / "history.csv"
-
-
-def load_history():
-    path = _history_path()
-    if not path.exists():
-        return
-    cutoff = time.time() - config.HISTORY_HOURS * 3600
-    with path.open() as f:
-        rows = [r for r in csv.DictReader(f) if float(r["ts"]) >= cutoff]
-    with lock:
-        history[:] = rows
-
-
 def _record(stats):
+    """Persist this poll's stats. Lines with no realtime trains (not running) are skipped by db.insert."""
     now = int(time.time())
-    rows = [{"ts": now, "route": "all", **{k: stats["all"][k] for k in HISTORY_FIELDS[2:]}}]
-    rows += [{"ts": now, "route": rid, **{k: g[k] for k in HISTORY_FIELDS[2:]}} for rid, g in stats["routes"].items()]
-    path = _history_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    new = not path.exists()
-    with path.open("a", newline="") as f:  # ponytail: grows forever, prune/rotate if it ever matters
-        w = csv.DictWriter(f, HISTORY_FIELDS)
-        if new:
-            w.writeheader()
-        w.writerows(rows)
-    cutoff = now - config.HISTORY_HOURS * 3600
-    with lock:
-        history[:] = [r for r in history if float(r["ts"]) >= cutoff] + rows
+    groups = {"all": stats["all"], **stats["routes"]}
+    db.insert([{"ts": now, "route": rid, **{k: g[k] for k in db.STATS}} for rid, g in groups.items()])
 
 
 def poll_once():
-    trains, alerts = [], []
+    trains = []
     for rid in config.ROUTES:
         trains += oba.fetch_trains(rid)
         time.sleep(config.REQUEST_GAP_SECONDS)
@@ -88,6 +64,23 @@ def poll_once():
     with lock:
         snapshot.update(trains=trains, alerts=alerts, updated=time.time(), error=None)
     _record(summarize(trains))
+
+
+def _redact(msg: str) -> str:
+    """Strip the API key out of upstream error text before it reaches /api/live.
+
+    oba.py sends the key via requests' `params=`, so it comes back percent-encoded inside
+    str(e) (+ / = -> %2B %2F %3D) and a plain str.replace(raw_key) would miss those forms
+    and publish the key to every visitor. Drop the whole key= query param, then any
+    leftover raw/encoded occurrence.
+    """
+    key = config.OBA_KEY
+    if not key:
+        return msg
+    msg = _KEY_PARAM.sub("key=***", msg)
+    for form in {key, quote(key), quote_plus(key)}:
+        msg = msg.replace(form, "***")
+    return msg
 
 
 def run_forever():
@@ -98,7 +91,7 @@ def run_forever():
             failures = 0
         except Exception as e:  # keep last good snapshot, surface the error in the UI
             failures += 1
-            msg = str(e).replace(config.OBA_KEY, "***") if config.OBA_KEY else str(e)  # URLs carry the key
+            msg = _redact(str(e))  # URLs carry the key
             log.warning("poll failed (%d in a row): %s", failures, msg)
             with lock:
                 snapshot["error"] = msg

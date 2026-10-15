@@ -1,0 +1,35 @@
+# Copy to /etc/systemd/system/seattlelink.service
+[Unit]
+Description=Gunicorn for SeattleLinkDashboard (live Sound Transit dashboard)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=milescb
+Group=milescb
+# config.DATA_DIR is relative ("data"), so cwd decides where static.json and
+# history.db land -- keep it at the repo root, same as `uv run seattletransit`.
+WorkingDirectory=/home/milescb/SeattleLinkDashboard
+EnvironmentFile=/etc/seattlelink/env
+
+# ONE worker, no --preload, no --max-requests. The OBA poller is a thread in this
+# process holding the live snapshot that /api/live serves:
+#   more workers   -> N pollers hitting OneBusAway -> HTTP 429 -> 5 min backoff,
+#                     and each worker serves a different snapshot
+#   --preload      -> the thread is created in the master before fork and dies in
+#                     the worker -> dashboard loads but never updates
+#   --max-requests -> every worker recycle drops the live snapshot and restarts
+#                     the poller (history itself is safe in data/history.db)
+# 4 request threads is plenty: responses are small JSON (live: memory, history: SQLite).
+ExecStart=/home/milescb/SeattleLinkDashboard/.venv/bin/gunicorn \
+    --bind 127.0.0.1:5001 --workers 1 --threads 4 --access-logfile - \
+    seattletransit.wsgi:application
+Restart=always
+RestartSec=5
+
+Environment=PATH=/home/milescb/SeattleLinkDashboard/.venv/bin:/usr/bin:/bin
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
